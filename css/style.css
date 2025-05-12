@@ -920,9 +920,9 @@ footer{
 }
 /* -------- MEDIA QUERY == 540px / RESPONSIVE ---------- */
 @media only screen and (max-width: 540px){
-    .featured-name{
+    /* .featured-name{
         font-size: 40px;
-    }
+    } */
     .service-container{
         gap: 30px;
     }
@@ -945,5 +945,22 @@ footer{
     }
     .footer_menu_list a{
         margin-inline: 7px;
+    }
+    /* ------- Remove Scroll Button Collition Problem in moblie ------ */
+    .featured-name{
+        margin-block: 8px;
+    }
+    .image, .image img{
+        width: 180px;
+        height: 180px;
+    }
+    .featured-text-info{
+        margin-bottom: 15px;
+    }
+    .social-icons{
+        margin-top: 1em;
+    }
+    .featured-name{
+        font-size: 38px;
     }
 }
