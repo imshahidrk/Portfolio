@@ -140,74 +140,81 @@ function scrollActive() {
 // ------------------------ FORM VALIDATION --------------------
 
 function validateForm() {
-    // Get form elements
     var fname = document.forms["myForm"]["fname"].value;
     var lname = document.forms["myForm"]["lname"].value;
     var email = document.forms["myForm"]["email"].value;
     var tel = document.forms["myForm"]["tel"].value;
+    var formMessage = document.getElementById('formMessage');
 
-    formMessage.style.color = 'red';    // Validation Error msg in Red color
-    // Validate first name
+    formMessage.style.color = 'red';
     var namePattern = /^[a-zA-Z]+$/;
-    if (!namePattern.test(fname) ) {
+    if (!namePattern.test(fname)) {
         formMessage.innerText = 'Please enter your First Name properly';
         return false;
     }
-    // Validate last name
     if (!namePattern.test(lname)) {
         formMessage.innerText = 'Please enter your Last Name properly';
         return false;
     }
-    // Validate email using regex pattern
     var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     if (!emailPattern.test(email)) {
         formMessage.innerText = 'Please enter a valid email address';
         return false;
     }
-    // Validate phone number using regex pattern (basic pattern, adjust if necessary)
     var telPattern = /^[9876]\d{9}$/;
     if (!telPattern.test(tel)) {
         formMessage.innerText = 'Please enter a valid 10-digit phone number';
         return false;
     }
-    // All validations passed
     return true;
 }
+
 // CODE FOR ADDING CONTACT FORM DETAILS IN GOOGLE SHEET
 const scriptURL = 'https://script.google.com/macros/s/AKfycbwfxIicxq3W5Jq_dqRBANjlmniOCe2hFZ8qNuBXpbTEoh1_oeaw1ykrROKE80V9It7L/exec'
+const form = document.forms['myForm'];
+const formMessage = document.getElementById('formMessage');
 
+form.addEventListener('submit', async e => {
+    e.preventDefault(); // Prevent default submission
 
-const form = document.forms['myForm']
+    // Validate form
+    if (!validateForm()) return;
 
-form.addEventListener('submit', e => {
-    e.preventDefault(); // Prevent form submission by default
+    // Show processing message
+    formMessage.innerHTML = 'Processing...';
+    formMessage.style.color = 'green';
 
-    // Call the validateForm function to check if the form is valid
-    if (validateForm()) {
-        // Shows the Processing Msg after Hit on submit button
-        const formMessage = document.getElementById('formMessage');
-        formMessage.innerHTML = "Processing...";
-        formMessage.style.color = 'green'; // Set success message color to green
-        // If the form is valid, proceed with the fetch request
-        fetch(scriptURL, {  
+    try {
+        // Submit to Google Sheet
+        const sheetResponse = await fetch(scriptURL, {
+            method: 'POST',
+            body: new FormData(form),
+            mode: 'no-cors'
+        });
+
+        // Submit to PHP for email sending
+        const emailResponse = await fetch('send_email.php', {
             method: 'POST',
             body: new FormData(form)
-        })
-        .then(response => {
-            // Success message
-            formMessage.innerHTML = 'Your message has been sent successfully!<br>Thank you, I will reach you soon!';
-            setTimeout(function(){
-                formMessage.innerHTML = ""
-            },7000)
-            form.reset(); // Reset form fields after successful submission
-        })
-        .catch(error => {
-            // Error message
-            formMessage.innerText = `Error: ${error.message}`;
-            formMessage.style.color = 'red'; // Set error message color to red
         });
-    } else {
-        // Here only IF Statement is Usefull (No Need of Else Statement)
+
+        // Check email response
+        const emailResult = await emailResponse.json();
+        if (emailResult.status === 'success') {
+            formMessage.innerHTML = 'Your message has been sent successfully!<br>Thank you, I will reach you soon!';
+            formMessage.style.color = 'green';
+            form.reset();
+            setTimeout(() => {
+                formMessage.innerHTML = '';
+            }, 7000);
+        } else {
+            formMessage.innerHTML = 'Error sending email: ' + emailResult.message;
+            formMessage.style.color = 'red';
+        }
+    } catch (error) {
+        formMessage.innerHTML = 'Error: ' + error.message;
+        formMessage.style.color = 'red';
+        console.error('Error:', error);
     }
 });
 
