@@ -138,9 +138,6 @@ function scrollActive() {
     window.addEventListener('scroll', scrollActive)
 
 
-    
-// FORM VALIDATION, SEND EMAIL, SAVE FORM DATA INTO SHEET AND STATUS MESSAGE
-
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('contactForm');
     const formMessage = document.getElementById('formMessage');
