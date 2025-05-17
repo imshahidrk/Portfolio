@@ -137,85 +137,106 @@ function scrollActive() {
 
     window.addEventListener('scroll', scrollActive)
 
-// ------------------------ FORM VALIDATION --------------------
 
-function validateForm() {
-    var fname = document.forms["myForm"]["fname"].value;
-    var lname = document.forms["myForm"]["lname"].value;
-    var email = document.forms["myForm"]["email"].value;
-    var tel = document.forms["myForm"]["tel"].value;
-    var formMessage = document.getElementById('formMessage');
+    
+// FORM VALIDATION, SEND EMAIL, SAVE FORM DATA INTO SHEET AND STATUS MESSAGE
 
-    formMessage.style.color = 'red';
-    var namePattern = /^[a-zA-Z]+$/;
-    if (!namePattern.test(fname)) {
-        formMessage.innerText = 'Please enter your First Name properly';
-        return false;
-    }
-    if (!namePattern.test(lname)) {
-        formMessage.innerText = 'Please enter your Last Name properly';
-        return false;
-    }
-    var emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-    if (!emailPattern.test(email)) {
-        formMessage.innerText = 'Please enter a valid email address';
-        return false;
-    }
-    var telPattern = /^[9876]\d{9}$/;
-    if (!telPattern.test(tel)) {
-        formMessage.innerText = 'Please enter a valid 10-digit phone number';
-        return false;
-    }
-    return true;
-}
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('contactForm');
+    const formMessage = document.getElementById('formMessage');
 
-// CODE FOR ADDING CONTACT FORM DETAILS IN GOOGLE SHEET
-const scriptURL = 'https://script.google.com/macros/s/AKfycbwfxIicxq3W5Jq_dqRBANjlmniOCe2hFZ8qNuBXpbTEoh1_oeaw1ykrROKE80V9It7L/exec'
-const form = document.forms['myForm'];
-const formMessage = document.getElementById('formMessage');
+    // Initialize EmailJS
+    emailjs.init('dJ5kojzYGVgg3hR0d'); // Your EmailJS Public Key
 
-form.addEventListener('submit', async e => {
-    e.preventDefault(); // Prevent default submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        formMessage.innerHTML = '';
 
-    // Validate form
-    if (!validateForm()) return;
+        // Show processing message
+        formMessage.innerHTML = 'Processing...';
+        formMessage.style.color = 'green';
 
-    // Show processing message
-    formMessage.innerHTML = 'Processing...';
-    formMessage.style.color = 'green';
+        // Get form data
+        var fname = document.forms["myForm"]["fname"].value.trim();
+        var lname = document.forms["myForm"]["lname"].value.trim();
+        var email = document.forms["myForm"]["user_email"].value.trim();
+        var tel = document.forms["myForm"]["tel"].value.trim();
+        var message = document.forms["myForm"]["message"].value.trim() || '(No message provided)';
+        var full_name = `${fname} ${lname}`;
 
-    try {
-        // Submit to Google Sheet
-        const sheetResponse = await fetch(scriptURL, {
-            method: 'POST',
-            body: new FormData(form),
-            mode: 'no-cors'
-        });
+        // Log email for debugging
+        // console.log('Submitted email:', email);     //For testing purpose
 
-        // Submit to PHP for email sending
-        const emailResponse = await fetch('send_email.php', {
-            method: 'POST',
-            body: new FormData(form)
-        });
+        // Validate inputs
+        var namePattern = /^[a-zA-Z]+$/;
+        if (!namePattern.test(fname)) {
+            formMessage.innerHTML = 'Please enter your First Name properly';
+            formMessage.style.color = 'red';
+            return;
+        }
+        if (!namePattern.test(lname)) {
+            formMessage.innerHTML = 'Please enter your Last Name properly';
+            formMessage.style.color = 'red';
+            return;
+        }
+        var emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailPattern.test(email)) {
+            formMessage.innerHTML = 'Please enter a valid email address';
+            formMessage.style.color = 'red';
+            return;
+        }
+        var telPattern = /^[9876]\d{9}$/;
+        if (!telPattern.test(tel)) {
+            formMessage.innerHTML = 'Please enter a valid 10-digit phone number';
+            formMessage.style.color = 'red';
+            return;
+        }
 
-        // Check email response
-        const emailResult = await emailResponse.json();
-        if (emailResult.status === 'success') {
+        try {
+            // Send user thank-you email
+            await emailjs.send('service_1vfgxxj', 'template_mf01bjf', {
+                full_name,
+                user_email: email,
+                tel,
+                message
+            });
+
+            // Send admin notification email
+            await emailjs.send('service_1vfgxxj', 'template_znnt8eb', {
+                full_name,
+                user_email: email,
+                tel,
+                message
+            });
+
+            // Log into google sheet
+            const scriptURL = 'https://script.google.com/macros/s/AKfycbwGOzZ1au9ZoupkTVJlg_H-u0GyflzJ4zw48CZwCOA72XYqUGOGq1fEiScDj7dEcszg/exec';
+            // Get IP address from ipify API
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            const ipAddress = ipData.ip || 'Unknown';
+            // Get User Agent
+            const userAgent = navigator.userAgent || 'Unknown';
+            // Create FormData and append IP and User Agent
+            const formData = new FormData(form);
+            formData.append('ipAddress', ipAddress);
+            formData.append('userAgent', userAgent);
+            // Send form data to Google Apps Script
+            await fetch(scriptURL, {
+                method: 'POST',
+                body: formData
+            });
+
+            
+            // Success message
             formMessage.innerHTML = 'Your message has been sent successfully!<br>Thank you, I will reach you soon!';
             formMessage.style.color = 'green';
             form.reset();
-            setTimeout(() => {
-                formMessage.innerHTML = '';
-            }, 7000);
-        } else {
-            formMessage.innerHTML = 'Error sending email: ' + emailResult.message;
+            setTimeout(() => { formMessage.innerHTML = ''; }, 7000);
+        } catch (error) {
+            console.error('EmailJS Error:', error);
+            formMessage.innerHTML = 'Error sending email: ' + (error.text || 'Please try again later.');
             formMessage.style.color = 'red';
         }
-    } catch (error) {
-        formMessage.innerHTML = 'Error: ' + error.message;
-        formMessage.style.color = 'red';
-        console.error('Error:', error);
-    }
+    });
 });
-
-

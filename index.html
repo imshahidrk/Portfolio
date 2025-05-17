@@ -306,17 +306,17 @@
                     </div>
                 </div>
                 <div class="col">
-                    <form class="form-control" name="myForm" id="contactForm" onsubmit="return validateForm()">
+                    <form class="form-control" name="myForm" id="contactForm">
                         <div class="form-inputs">
-                            <input type="text" class="input-field" name="fname" placeholder="First Name" required>
-                            <input type="text" class="input-field" name="lname" placeholder="Last Name" required>
+                            <input type="text" id="fname" class="input-field" name="fname" placeholder="First Name" required>
+                            <input type="text" id="lname" class="input-field" name="lname" placeholder="Last Name" required>
                         </div>
                         <div class="form-inputs">
-                            <input type="email" class="input-field" name="email" placeholder="Email" required>
-                            <input type="tel" class="input-field" name="tel" placeholder="Phone No." required>
+                            <input type="email" id="user_email" class="input-field" name="email" placeholder="Email" required>
+                            <input type="tel" id="tel" class="input-field" name="tel" placeholder="Phone No." required>
                         </div>
                         <div class="text-area">
-                            <textarea name="message" placeholder="Message"></textarea>
+                            <textarea id="message" name="message" placeholder="Message"></textarea>
                         </div>
                         <div class="form-button">
                             <button class="btn" type="submit" name="submit">Send <i class="uil uil-message"></i></button>
